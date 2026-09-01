@@ -404,7 +404,7 @@ function showWin(): void {
   liveStatus.textContent = `Line ${levelIndex + 1} connected`;
 
   if (levelIndex < LEVELS.length - 1) {
-    transitionTimer = window.setTimeout(() => loadLevel(levelIndex + 1), 1250);
+    transitionTimer = window.setTimeout(() => loadLevel(levelIndex + 1), 1600);
     return;
   }
 
