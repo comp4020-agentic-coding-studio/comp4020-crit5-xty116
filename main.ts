@@ -553,7 +553,7 @@ function showWin(): void {
 
   resultKicker.textContent = "Network complete";
   resultTitle.textContent = "ALL TRAFFIC CLEAR";
-  resultDetail.textContent = `05 lines / ${twoDigits(faults)} faults`;
+  resultDetail.textContent = `${twoDigits(LEVELS.length)} lines / ${twoDigits(faults)} faults`;
   resultAction.hidden = false;
   resultAction.querySelector("span")!.textContent = "Replay network";
   resultAction.focus({ preventScroll: true });

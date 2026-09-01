@@ -1,7 +1,7 @@
 # TURNLINE
 
-A tiny live-routing game for COMP4020 Crit 5. Five increasingly tangled rail
-networks share one mechanic, one moving signal, and terminal win/loss states.
+A tiny live-routing game for COMP4020 Crit 5. Eight increasingly tangled rail
+networks share one mechanic, staggered geometric signals, and terminal win/loss states.
 The client is static and deploys directly to GitHub Pages.
 
 ## Verification

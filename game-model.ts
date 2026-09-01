@@ -128,6 +128,68 @@ export const LEVELS: readonly LevelDefinition[] = [
       { id: "gd", x: 0.88, y: 0.86, kind: "goal", accepts: "diamond" },
     ],
   },
+  {
+    id: "relay-four",
+    speed: 0.2,
+    signals: [
+      { id: "q1", shape: "square", start: "s", delayMs: 0 },
+      { id: "q2", shape: "circle", start: "s", delayMs: 1_800 },
+      { id: "q3", shape: "diamond", start: "s", delayMs: 3_600 },
+      { id: "q4", shape: "circle", start: "s", delayMs: 5_400 },
+    ],
+    initialRoutes: { a: 1, b: 1 },
+    nodes: [
+      { id: "s", x: 0.05, y: 0.52, kind: "start", next: "a" },
+      { id: "a", x: 0.31, y: 0.52, kind: "junction", routes: ["gs", "b"] },
+      { id: "b", x: 0.59, y: 0.55, kind: "junction", routes: ["gc", "gd"] },
+      { id: "gs", x: 0.9, y: 0.12, kind: "goal", accepts: "square" },
+      { id: "gc", x: 0.9, y: 0.5, kind: "goal", accepts: "circle" },
+      { id: "gd", x: 0.9, y: 0.87, kind: "goal", accepts: "diamond" },
+    ],
+  },
+  {
+    id: "switchyard-five",
+    speed: 0.205,
+    signals: [
+      { id: "q1", shape: "square", start: "s", delayMs: 0 },
+      { id: "q2", shape: "circle", start: "s", delayMs: 1_700 },
+      { id: "q3", shape: "diamond", start: "s", delayMs: 3_400 },
+      { id: "q4", shape: "square", start: "s", delayMs: 5_100 },
+      { id: "q5", shape: "diamond", start: "s", delayMs: 6_800 },
+    ],
+    initialRoutes: { a: 1, b: 0, c: 1 },
+    nodes: [
+      { id: "s", x: 0.04, y: 0.5, kind: "start", next: "a" },
+      { id: "a", x: 0.29, y: 0.5, kind: "junction", routes: ["b", "c"] },
+      { id: "b", x: 0.55, y: 0.27, kind: "junction", routes: ["gs", "gd"] },
+      { id: "c", x: 0.55, y: 0.74, kind: "junction", routes: ["gc", "gd"] },
+      { id: "gs", x: 0.9, y: 0.1, kind: "goal", accepts: "square" },
+      { id: "gc", x: 0.9, y: 0.5, kind: "goal", accepts: "circle" },
+      { id: "gd", x: 0.9, y: 0.89, kind: "goal", accepts: "diamond" },
+    ],
+  },
+  {
+    id: "terminal-rush",
+    speed: 0.21,
+    signals: [
+      { id: "q1", shape: "square", start: "s", delayMs: 0 },
+      { id: "q2", shape: "circle", start: "s", delayMs: 1_500 },
+      { id: "q3", shape: "diamond", start: "s", delayMs: 3_000 },
+      { id: "q4", shape: "square", start: "s", delayMs: 4_500 },
+      { id: "q5", shape: "diamond", start: "s", delayMs: 6_000 },
+      { id: "q6", shape: "circle", start: "s", delayMs: 7_500 },
+    ],
+    initialRoutes: { a: 1, b: 0, c: 1 },
+    nodes: [
+      { id: "s", x: 0.04, y: 0.52, kind: "start", next: "a" },
+      { id: "a", x: 0.28, y: 0.52, kind: "junction", routes: ["b", "c"] },
+      { id: "b", x: 0.54, y: 0.28, kind: "junction", routes: ["gs", "gd"] },
+      { id: "c", x: 0.54, y: 0.76, kind: "junction", routes: ["gc", "gd"] },
+      { id: "gs", x: 0.9, y: 0.1, kind: "goal", accepts: "square" },
+      { id: "gc", x: 0.9, y: 0.5, kind: "goal", accepts: "circle" },
+      { id: "gd", x: 0.9, y: 0.9, kind: "goal", accepts: "diamond" },
+    ],
+  },
 ];
 
 export function nodeById(level: LevelDefinition, id: string): TrackNode {

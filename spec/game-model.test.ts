@@ -24,8 +24,8 @@ function finish(level: LevelDefinition, initial: RunState): RunState {
 }
 
 describe("Turnline dispatch model", () => {
-  it("is a five-line campaign built from one interactable node kind", () => {
-    expect(LEVELS).toHaveLength(5);
+  it("is an eight-line campaign built from one interactable node kind", () => {
+    expect(LEVELS).toHaveLength(8);
     for (const level of LEVELS) {
       expect(level.nodes.filter((node) => node.kind === "junction").length).toBeGreaterThan(0);
       expect(level.signals.length).toBeGreaterThan(0);
@@ -80,7 +80,7 @@ describe("Turnline dispatch model", () => {
     expect(finished.signals.every((signal) => signal.status === "arrived")).toBe(true);
   });
 
-  it("makes the final relay coordinate two junctions over time", () => {
+  it("introduces a two-junction relay midway through the campaign", () => {
     const level = LEVELS[4];
     let state = toggleJunction(level, createRun(level), "a");
     state = advanceFor(level, state, 1_800);
@@ -88,6 +88,49 @@ describe("Turnline dispatch model", () => {
     state = toggleJunction(level, state, "b");
     state = advanceFor(level, state, 3_900);
     state = toggleJunction(level, state, "b");
+    expect(finish(level, state).status).toBe("won");
+  });
+
+  it("makes line six alternate four signals through a two-stage relay", () => {
+    const level = LEVELS[5];
+    let state = toggleJunction(level, createRun(level), "a");
+    state = advanceFor(level, state, 1_800);
+    state = toggleJunction(level, state, "a");
+    state = toggleJunction(level, state, "b");
+    state = advanceFor(level, state, 3_600);
+    state = toggleJunction(level, state, "b");
+    state = advanceFor(level, state, 1_800);
+    state = toggleJunction(level, state, "b");
+    expect(finish(level, state).status).toBe("won");
+  });
+
+  it("makes line seven coordinate all three junctions across five signals", () => {
+    const level = LEVELS[6];
+    let state = toggleJunction(level, createRun(level), "a");
+    state = advanceFor(level, state, 1_700);
+    state = toggleJunction(level, state, "a");
+    state = toggleJunction(level, state, "c");
+    state = advanceFor(level, state, 3_100);
+    state = toggleJunction(level, state, "a");
+    state = toggleJunction(level, state, "c");
+    state = advanceFor(level, state, 3_400);
+    state = toggleJunction(level, state, "b");
+    expect(finish(level, state).status).toBe("won");
+  });
+
+  it("makes the final line sort six tightly staggered signals", () => {
+    const level = LEVELS[7];
+    let state = toggleJunction(level, createRun(level), "a");
+    state = advanceFor(level, state, 1_700);
+    state = toggleJunction(level, state, "a");
+    state = toggleJunction(level, state, "c");
+    state = advanceFor(level, state, 2_800);
+    state = toggleJunction(level, state, "a");
+    state = toggleJunction(level, state, "c");
+    state = advanceFor(level, state, 3_000);
+    state = toggleJunction(level, state, "a");
+    state = toggleJunction(level, state, "b");
+    state = toggleJunction(level, state, "c");
     expect(finish(level, state).status).toBe("won");
   });
 
