@@ -5,8 +5,8 @@ import {
   createRun,
   nodeById,
   toggleJunction,
-  type LevelDefinition,
-  type RunState,
+  type SignalShape,
+  type SignalState,
   type TrackNode,
 } from "./game-model";
 
@@ -15,11 +15,12 @@ const context = requireCanvasContext(canvas);
 
 const junctionLayer = requireElement<HTMLDivElement>("#junction-layer");
 const lineReadout = requireElement<HTMLElement>("#line-readout");
-const timeReadout = requireElement<HTMLElement>("#time-readout");
+const trafficReadout = requireElement<HTMLElement>("#traffic-readout");
 const faultReadout = requireElement<HTMLElement>("#fault-readout");
 const statusCopy = requireElement<HTMLElement>("#status-copy");
 const statusIndex = requireElement<HTMLElement>(".status-index");
 const liveStatus = requireElement<HTMLElement>("#live-status");
+const dispatchStrip = requireElement<HTMLOListElement>("#dispatch-strip");
 const progressList = requireElement<HTMLOListElement>("#line-progress");
 const resultOverlay = requireElement<HTMLElement>("#result-overlay");
 const resultKicker = requireElement<HTMLElement>("#result-kicker");
@@ -35,10 +36,11 @@ const palette = {
   background: "#0a0b0b",
   ink: "#f4f0e8",
   muted: "#59605d",
-  signal: "#6ee7de",
+  square: "#6ee7de",
+  circle: "#9be564",
+  diamond: "#f4f0e8",
   route: "#ffd147",
   danger: "#ff6c5f",
-  success: "#9be564",
 };
 
 let levelIndex = 0;
@@ -75,11 +77,19 @@ function twoDigits(value: number): string {
   return String(value).padStart(2, "0");
 }
 
+function shapeColor(shape: SignalShape): string {
+  return palette[shape];
+}
+
+function shapeName(shape: SignalShape): string {
+  return shape.charAt(0).toUpperCase() + shape.slice(1);
+}
+
 function boardBounds(): BoardBounds {
   const compact = canvas.clientWidth <= 760;
   const left = compact ? 20 : Math.min(340, canvas.clientWidth * 0.25);
   const right = compact ? 20 : 44;
-  const top = compact ? 190 : 112;
+  const top = compact ? 215 : 112;
   const bottom = compact ? 104 : 86;
   return {
     left,
@@ -131,6 +141,18 @@ function tone(frequency: number, duration: number, volume = 0.045, delay = 0): v
   oscillator.stop(start + duration + 0.03);
 }
 
+function shapeFrequency(shape: SignalShape): number {
+  if (shape === "square") return 523.25;
+  if (shape === "circle") return 659.25;
+  return 783.99;
+}
+
+function arrivalTone(shape: SignalShape): void {
+  const frequency = shapeFrequency(shape);
+  tone(frequency, 0.18, 0.035);
+  tone(frequency * 1.25, 0.24, 0.03, 0.08);
+}
+
 function successTone(): void {
   tone(392, 0.28, 0.04);
   tone(523.25, 0.32, 0.04, 0.11);
@@ -157,6 +179,34 @@ function drawGrid(width: number, height: number): void {
   }
   context.stroke();
   context.restore();
+}
+
+function traceShape(shape: SignalShape, size: number): void {
+  context.beginPath();
+  if (shape === "square") {
+    context.rect(-size, -size, size * 2, size * 2);
+    return;
+  }
+  if (shape === "circle") {
+    context.arc(0, 0, size, 0, Math.PI * 2);
+    return;
+  }
+  context.moveTo(0, -size * 1.25);
+  context.lineTo(size * 1.25, 0);
+  context.lineTo(0, size * 1.25);
+  context.lineTo(-size * 1.25, 0);
+  context.closePath();
+}
+
+function drawShape(shape: SignalShape, size: number, color: string, filled: boolean): void {
+  traceShape(shape, size);
+  context.strokeStyle = color;
+  context.lineWidth = 3;
+  if (filled) {
+    context.fillStyle = color;
+    context.fill();
+  }
+  context.stroke();
 }
 
 function drawRail(from: TrackNode, to: TrackNode, active: boolean): void {
@@ -204,24 +254,30 @@ function drawTerminal(node: TrackNode): void {
   context.translate(point.x, point.y);
 
   if (node.kind === "start") {
-    context.strokeStyle = palette.signal;
-    context.lineWidth = 3;
+    context.strokeStyle = palette.muted;
+    context.lineWidth = 2;
     context.beginPath();
-    context.arc(0, 0, 10, 0, Math.PI * 2);
+    context.moveTo(-13, -17);
+    context.lineTo(-18, -17);
+    context.lineTo(-18, 17);
+    context.lineTo(-13, 17);
     context.stroke();
-    context.fillStyle = palette.signal;
-    context.fillRect(-3, -3, 6, 6);
   }
 
-  if (node.kind === "goal") {
-    context.strokeStyle = palette.success;
-    context.lineWidth = 4;
-    context.strokeRect(-13, -13, 26, 26);
-    context.fillStyle = palette.success;
-    context.fillRect(-5, -5, 10, 10);
-    context.font = "700 10px ui-monospace, monospace";
-    context.textAlign = "center";
-    context.fillText("CLEAR", 0, -22);
+  if (node.kind === "goal" && node.accepts) {
+    const color = shapeColor(node.accepts);
+    const arrived = run.signals.some(
+      (signal) =>
+        signal.status === "arrived" && signal.shape === node.accepts && signal.from === node.id,
+    );
+    context.globalAlpha = arrived ? 1 : 0.9;
+    drawShape(node.accepts, 15, color, false);
+    drawShape(node.accepts, 6, color, arrived);
+    context.strokeStyle = color;
+    context.lineWidth = 1;
+    context.beginPath();
+    context.arc(0, 0, 24, 0, Math.PI * 2);
+    context.stroke();
   }
 
   if (node.kind === "hazard") {
@@ -263,23 +319,56 @@ function drawJunction(node: TrackNode): void {
   context.restore();
 }
 
-function drawSignal(): void {
-  const from = pointFor(nodeById(level, run.from));
-  const to = pointFor(nodeById(level, run.to));
-  const x = from.x + (to.x - from.x) * run.progress;
-  const y = from.y + (to.y - from.y) * run.progress;
-  const angle = Math.atan2(to.y - from.y, to.x - from.x);
+function queuedPoint(signal: SignalState): { x: number; y: number } {
+  const start = pointFor(nodeById(level, signal.from));
+  const siblings = run.signals.filter(
+    (candidate) => candidate.status === "queued" && candidate.from === signal.from,
+  );
+  const index = siblings.findIndex((candidate) => candidate.id === signal.id);
+  return {
+    x: start.x,
+    y: start.y + (index - (siblings.length - 1) / 2) * 26,
+  };
+}
+
+function drawSignal(signal: SignalState): void {
+  if (signal.status === "arrived" || signal.status === "failed") return;
+  const color = shapeColor(signal.shape);
+  let point: { x: number; y: number };
+  let angle = 0;
+
+  if (signal.status === "queued") {
+    point = queuedPoint(signal);
+  } else {
+    const from = pointFor(nodeById(level, signal.from));
+    const to = pointFor(nodeById(level, signal.to));
+    point = {
+      x: from.x + (to.x - from.x) * signal.progress,
+      y: from.y + (to.y - from.y) * signal.progress,
+    };
+    angle = Math.atan2(to.y - from.y, to.x - from.x);
+  }
 
   context.save();
-  context.translate(x, y);
+  context.translate(point.x, point.y);
   context.rotate(angle);
-  context.shadowColor = palette.signal;
-  context.shadowBlur = 20;
-  context.fillStyle = palette.signal;
-  context.fillRect(-13, -8, 26, 16);
+  context.globalAlpha = signal.status === "queued" ? 0.76 : 1;
+  context.shadowColor = color;
+  context.shadowBlur = signal.status === "moving" ? 20 : 8;
+  drawShape(signal.shape, 11, color, signal.status === "moving");
   context.shadowBlur = 0;
-  context.fillStyle = palette.background;
-  context.fillRect(3, -3, 5, 6);
+  if (signal.status === "moving") {
+    drawShape(signal.shape, 4, palette.background, true);
+  }
+
+  if (signal.status === "queued" && run.status === "running" && signal.delayMs > 0) {
+    const readiness = Math.min(1, run.elapsedMs / signal.delayMs);
+    context.strokeStyle = color;
+    context.lineWidth = 2;
+    context.beginPath();
+    context.arc(0, 0, 18, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * readiness);
+    context.stroke();
+  }
   context.restore();
 }
 
@@ -293,7 +382,7 @@ function draw(): void {
     if (node.kind === "junction") drawJunction(node);
     else drawTerminal(node);
   });
-  drawSignal();
+  run.signals.forEach(drawSignal);
 }
 
 function placeJunctions(): void {
@@ -341,10 +430,39 @@ function switchRoute(id: string): void {
   const wasIdle = run.status === "idle";
   run = toggleJunction(level, run, id);
   tone(wasIdle ? 329.63 : 440, 0.12);
-  statusCopy.textContent = "Signal live";
-  liveStatus.textContent = wasIdle ? "Signal moving" : "Junction switched";
+  liveStatus.textContent = wasIdle ? "Traffic dispatched" : "Junction switched";
   updateJunctionButtons();
+  updateReadouts();
   animateRun();
+}
+
+function buildDispatchStrip(): void {
+  dispatchStrip.replaceChildren();
+  run.signals.forEach((signal, index) => {
+    const item = document.createElement("li");
+    const symbol = document.createElement("span");
+    symbol.className = "signal-token";
+    symbol.setAttribute("aria-hidden", "true");
+    item.dataset.signal = signal.id;
+    item.dataset.shape = signal.shape;
+    item.append(symbol);
+    item.setAttribute("aria-label", `Signal ${index + 1}: ${signal.shape}, queued`);
+    dispatchStrip.append(item);
+  });
+  updateDispatchStrip();
+}
+
+function updateDispatchStrip(): void {
+  dispatchStrip.querySelectorAll<HTMLLIElement>("li").forEach((item, index) => {
+    const signal = run.signals[index];
+    item.classList.toggle("is-moving", signal.status === "moving");
+    item.classList.toggle("is-arrived", signal.status === "arrived");
+    item.classList.toggle("is-failed", signal.status === "failed");
+    item.setAttribute(
+      "aria-label",
+      `Signal ${index + 1}: ${signal.shape}, ${signal.status}`,
+    );
+  });
 }
 
 function buildProgress(): void {
@@ -362,10 +480,22 @@ function buildProgress(): void {
 }
 
 function updateReadouts(): void {
+  const arrived = run.signals.filter((signal) => signal.status === "arrived").length;
+  const moving = run.signals.filter((signal) => signal.status === "moving").length;
+  const queued = run.signals.filter((signal) => signal.status === "queued").length;
   lineReadout.textContent = `${twoDigits(levelIndex + 1)} / ${twoDigits(LEVELS.length)}`;
-  timeReadout.textContent = (run.elapsedMs / 1000).toFixed(1).padStart(4, "0");
+  trafficReadout.textContent = `${twoDigits(arrived)} / ${twoDigits(run.signals.length)}`;
   faultReadout.textContent = twoDigits(faults);
   statusIndex.textContent = twoDigits(levelIndex + 1);
+
+  if (run.status === "idle") statusCopy.textContent = "Traffic held";
+  if (run.status === "running") {
+    statusCopy.textContent =
+      queued > 0 ? `${moving} live / ${queued} queued` : `${moving} live`;
+  }
+  if (run.status === "won") statusCopy.textContent = "Line clear";
+  if (run.status === "lost") statusCopy.textContent = "Traffic fault";
+  updateDispatchStrip();
 }
 
 function loadLevel(nextIndex: number): void {
@@ -376,9 +506,9 @@ function loadLevel(nextIndex: number): void {
   lastFrame = performance.now();
   resultOverlay.hidden = true;
   resultAction.hidden = false;
-  statusCopy.textContent = "Signal held";
   liveStatus.textContent = `Line ${levelIndex + 1} ready`;
   renderJunctionButtons();
+  buildDispatchStrip();
   buildProgress();
   updateReadouts();
   draw();
@@ -390,9 +520,14 @@ function loadLevel(nextIndex: number): void {
 function showLoss(): void {
   faults += 1;
   failureTone();
+  const failed = run.signals.find((signal) => signal.status === "failed");
+  const terminal = failed ? nodeById(level, failed.from) : undefined;
   resultKicker.textContent = `Line ${twoDigits(levelIndex + 1)} / fault ${twoDigits(faults)}`;
   resultTitle.textContent = "MISROUTED";
-  resultDetail.textContent = "The signal reached a broken line.";
+  resultDetail.textContent =
+    failed && terminal?.kind === "goal" && terminal.accepts
+      ? `${shapeName(failed.shape)} traffic reached the ${terminal.accepts} terminal.`
+      : "Traffic reached a broken line.";
   resultAction.hidden = false;
   resultAction.querySelector("span")!.textContent = "Run again";
   resultOverlay.hidden = false;
@@ -403,13 +538,13 @@ function showLoss(): void {
 
 function showWin(): void {
   successTone();
-  statusCopy.textContent = "Line clear";
   resultKicker.textContent = `Line ${twoDigits(levelIndex + 1)}`;
-  resultTitle.textContent = "CONNECTED";
-  resultDetail.textContent = `${(run.elapsedMs / 1000).toFixed(1)} seconds / signal stable`;
+  resultTitle.textContent = "SORTED";
+  resultDetail.textContent = `${twoDigits(run.signals.length)} signals / ${(run.elapsedMs / 1000).toFixed(1)} seconds`;
   resultAction.hidden = true;
   resultOverlay.hidden = false;
-  liveStatus.textContent = `Line ${levelIndex + 1} connected`;
+  liveStatus.textContent = `Line ${levelIndex + 1} sorted`;
+  updateReadouts();
 
   if (levelIndex < LEVELS.length - 1) {
     transitionTimer = window.setTimeout(() => loadLevel(levelIndex + 1), 1600);
@@ -417,8 +552,8 @@ function showWin(): void {
   }
 
   resultKicker.textContent = "Network complete";
-  resultTitle.textContent = "ALL LINES CLEAR";
-  resultDetail.textContent = `05 connected / ${twoDigits(faults)} faults`;
+  resultTitle.textContent = "ALL TRAFFIC CLEAR";
+  resultDetail.textContent = `05 lines / ${twoDigits(faults)} faults`;
   resultAction.hidden = false;
   resultAction.querySelector("span")!.textContent = "Replay network";
   resultAction.focus({ preventScroll: true });
@@ -448,10 +583,21 @@ function frame(now: number): void {
   activeFrame = 0;
   const delta = Math.min(50, now - lastFrame);
   lastFrame = now;
-  const previousStatus = run.status;
+  const previous = run;
   run = advanceRun(level, run, delta);
 
-  if (previousStatus !== run.status) {
+  run.signals.forEach((signal, index) => {
+    const previousStatus = previous.signals[index].status;
+    if (previousStatus === "queued" && signal.status === "moving") {
+      tone(shapeFrequency(signal.shape) / 2, 0.1, 0.025);
+    }
+    if (previousStatus !== "arrived" && signal.status === "arrived" && run.status !== "won") {
+      arrivalTone(signal.shape);
+      liveStatus.textContent = `${shapeName(signal.shape)} signal sorted`;
+    }
+  });
+
+  if (previous.status !== run.status) {
     if (run.status === "lost") showLoss();
     if (run.status === "won") showWin();
   }

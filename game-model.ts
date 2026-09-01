@@ -1,4 +1,6 @@
 export type RunStatus = "idle" | "running" | "won" | "lost";
+export type SignalStatus = "queued" | "moving" | "arrived" | "failed";
+export type SignalShape = "square" | "circle" | "diamond";
 export type NodeKind = "start" | "junction" | "waypoint" | "goal" | "hazard";
 
 export interface TrackNode {
@@ -8,101 +10,122 @@ export interface TrackNode {
   readonly kind: NodeKind;
   readonly next?: string;
   readonly routes?: readonly [string, string];
+  readonly accepts?: SignalShape;
+}
+
+export interface SignalDefinition {
+  readonly id: string;
+  readonly shape: SignalShape;
+  readonly start: string;
+  readonly delayMs: number;
 }
 
 export interface LevelDefinition {
   readonly id: string;
   readonly speed: number;
-  readonly start: string;
+  readonly signals: readonly SignalDefinition[];
   readonly initialRoutes: Readonly<Record<string, 0 | 1>>;
   readonly nodes: readonly TrackNode[];
 }
 
-export interface RunState {
-  readonly status: RunStatus;
+export interface SignalState {
+  readonly id: string;
+  readonly shape: SignalShape;
+  readonly status: SignalStatus;
   readonly from: string;
   readonly to: string;
   readonly progress: number;
+  readonly delayMs: number;
+}
+
+export interface RunState {
+  readonly status: RunStatus;
   readonly elapsedMs: number;
   readonly routes: Readonly<Record<string, 0 | 1>>;
+  readonly signals: readonly SignalState[];
 }
 
 export const LEVELS: readonly LevelDefinition[] = [
   {
     id: "first-light",
-    speed: 0.13,
-    start: "s",
+    speed: 0.145,
+    signals: [{ id: "q1", shape: "square", start: "s", delayMs: 0 }],
     initialRoutes: { a: 0 },
     nodes: [
       { id: "s", x: 0.08, y: 0.58, kind: "start", next: "a" },
-      { id: "a", x: 0.45, y: 0.58, kind: "junction", routes: ["x", "g"] },
+      { id: "a", x: 0.45, y: 0.58, kind: "junction", routes: ["x", "gs"] },
       { id: "x", x: 0.82, y: 0.8, kind: "hazard" },
-      { id: "g", x: 0.88, y: 0.22, kind: "goal" },
+      { id: "gs", x: 0.88, y: 0.22, kind: "goal", accepts: "square" },
     ],
   },
   {
-    id: "cross-current",
-    speed: 0.15,
-    start: "s",
-    initialRoutes: { a: 0, b: 1 },
-    nodes: [
-      { id: "s", x: 0.06, y: 0.72, kind: "start", next: "a" },
-      { id: "a", x: 0.3, y: 0.58, kind: "junction", routes: ["x", "b"] },
-      { id: "x", x: 0.54, y: 0.84, kind: "hazard" },
-      { id: "b", x: 0.58, y: 0.38, kind: "junction", routes: ["g", "y"] },
-      { id: "y", x: 0.86, y: 0.62, kind: "hazard" },
-      { id: "g", x: 0.91, y: 0.14, kind: "goal" },
-    ],
-  },
-  {
-    id: "three-way",
+    id: "alternating-dispatch",
     speed: 0.165,
-    start: "s",
-    initialRoutes: { a: 0, b: 0, c: 1 },
+    signals: [
+      { id: "q1", shape: "square", start: "ss", delayMs: 0 },
+      { id: "q2", shape: "circle", start: "sc", delayMs: 3_000 },
+    ],
+    initialRoutes: { a: 1 },
     nodes: [
-      { id: "s", x: 0.05, y: 0.48, kind: "start", next: "a" },
-      { id: "a", x: 0.27, y: 0.48, kind: "junction", routes: ["x", "b"] },
-      { id: "x", x: 0.48, y: 0.76, kind: "hazard" },
-      { id: "b", x: 0.5, y: 0.25, kind: "junction", routes: ["y", "c"] },
-      { id: "y", x: 0.7, y: 0.08, kind: "hazard" },
-      { id: "c", x: 0.72, y: 0.48, kind: "junction", routes: ["g", "z"] },
-      { id: "z", x: 0.9, y: 0.74, kind: "hazard" },
-      { id: "g", x: 0.94, y: 0.22, kind: "goal" },
+      { id: "ss", x: 0.06, y: 0.35, kind: "start", next: "a" },
+      { id: "sc", x: 0.06, y: 0.72, kind: "start", next: "a" },
+      { id: "a", x: 0.44, y: 0.53, kind: "junction", routes: ["gs", "gc"] },
+      { id: "gs", x: 0.9, y: 0.22, kind: "goal", accepts: "square" },
+      { id: "gc", x: 0.9, y: 0.82, kind: "goal", accepts: "circle" },
     ],
   },
   {
-    id: "return-loop",
+    id: "sorting-yard",
     speed: 0.18,
-    start: "s",
-    initialRoutes: { a: 0, b: 0, c: 0 },
+    signals: [
+      { id: "q1", shape: "square", start: "ss", delayMs: 0 },
+      { id: "q2", shape: "circle", start: "sc", delayMs: 2_600 },
+    ],
+    initialRoutes: { a: 1, b: 0, c: 1 },
     nodes: [
-      { id: "s", x: 0.06, y: 0.76, kind: "start", next: "a" },
-      { id: "a", x: 0.28, y: 0.58, kind: "junction", routes: ["x", "b"] },
-      { id: "x", x: 0.47, y: 0.84, kind: "hazard" },
-      { id: "b", x: 0.52, y: 0.28, kind: "junction", routes: ["c", "y"] },
-      { id: "y", x: 0.74, y: 0.08, kind: "hazard" },
-      { id: "c", x: 0.75, y: 0.52, kind: "junction", routes: ["a", "g"] },
-      { id: "g", x: 0.94, y: 0.25, kind: "goal" },
+      { id: "ss", x: 0.05, y: 0.38, kind: "start", next: "a" },
+      { id: "sc", x: 0.05, y: 0.72, kind: "start", next: "a" },
+      { id: "a", x: 0.29, y: 0.53, kind: "junction", routes: ["b", "c"] },
+      { id: "b", x: 0.56, y: 0.27, kind: "junction", routes: ["x", "gs"] },
+      { id: "c", x: 0.56, y: 0.74, kind: "junction", routes: ["gc", "y"] },
+      { id: "x", x: 0.82, y: 0.08, kind: "hazard" },
+      { id: "gs", x: 0.92, y: 0.22, kind: "goal", accepts: "square" },
+      { id: "gc", x: 0.92, y: 0.82, kind: "goal", accepts: "circle" },
+      { id: "y", x: 0.82, y: 0.96, kind: "hazard" },
     ],
   },
   {
-    id: "rush-line",
-    speed: 0.205,
-    start: "s",
-    initialRoutes: { a: 0, b: 1, c: 0, d: 1, e: 0 },
+    id: "triple-pulse",
+    speed: 0.19,
+    signals: [
+      { id: "q1", shape: "square", start: "s", delayMs: 0 },
+      { id: "q2", shape: "circle", start: "s", delayMs: 1_800 },
+      { id: "q3", shape: "square", start: "s", delayMs: 3_600 },
+    ],
+    initialRoutes: { a: 1 },
     nodes: [
-      { id: "s", x: 0.04, y: 0.5, kind: "start", next: "a" },
-      { id: "a", x: 0.2, y: 0.5, kind: "junction", routes: ["x", "b"] },
-      { id: "x", x: 0.34, y: 0.78, kind: "hazard" },
-      { id: "b", x: 0.37, y: 0.27, kind: "junction", routes: ["c", "y"] },
-      { id: "y", x: 0.51, y: 0.08, kind: "hazard" },
-      { id: "c", x: 0.53, y: 0.5, kind: "junction", routes: ["z", "d"] },
-      { id: "z", x: 0.64, y: 0.78, kind: "hazard" },
-      { id: "d", x: 0.69, y: 0.28, kind: "junction", routes: ["e", "w"] },
-      { id: "w", x: 0.82, y: 0.08, kind: "hazard" },
-      { id: "e", x: 0.83, y: 0.5, kind: "junction", routes: ["q", "g"] },
-      { id: "q", x: 0.94, y: 0.76, kind: "hazard" },
-      { id: "g", x: 0.96, y: 0.26, kind: "goal" },
+      { id: "s", x: 0.06, y: 0.5, kind: "start", next: "a" },
+      { id: "a", x: 0.38, y: 0.5, kind: "junction", routes: ["gs", "gc"] },
+      { id: "gs", x: 0.91, y: 0.22, kind: "goal", accepts: "square" },
+      { id: "gc", x: 0.91, y: 0.79, kind: "goal", accepts: "circle" },
+    ],
+  },
+  {
+    id: "three-way-relay",
+    speed: 0.195,
+    signals: [
+      { id: "q1", shape: "square", start: "s", delayMs: 0 },
+      { id: "q2", shape: "circle", start: "s", delayMs: 2_200 },
+      { id: "q3", shape: "diamond", start: "s", delayMs: 4_400 },
+    ],
+    initialRoutes: { a: 1, b: 1 },
+    nodes: [
+      { id: "s", x: 0.05, y: 0.52, kind: "start", next: "a" },
+      { id: "a", x: 0.35, y: 0.52, kind: "junction", routes: ["gs", "b"] },
+      { id: "b", x: 0.62, y: 0.55, kind: "junction", routes: ["gc", "gd"] },
+      { id: "gs", x: 0.88, y: 0.14, kind: "goal", accepts: "square" },
+      { id: "gc", x: 0.9, y: 0.51, kind: "goal", accepts: "circle" },
+      { id: "gd", x: 0.88, y: 0.86, kind: "goal", accepts: "diamond" },
     ],
   },
 ];
@@ -114,16 +137,28 @@ export function nodeById(level: LevelDefinition, id: string): TrackNode {
 }
 
 export function createRun(level: LevelDefinition): RunState {
-  const start = nodeById(level, level.start);
-  if (start.kind !== "start" || !start.next) throw new Error(`${level.id} needs a connected start`);
-  nodeById(level, start.next);
+  const signals = level.signals.map<SignalState>((definition) => {
+    const start = nodeById(level, definition.start);
+    if (start.kind !== "start" || !start.next) {
+      throw new Error(`${level.id} needs a connected start for ${definition.id}`);
+    }
+    nodeById(level, start.next);
+    return {
+      id: definition.id,
+      shape: definition.shape,
+      status: "queued",
+      from: start.id,
+      to: start.next,
+      progress: 0,
+      delayMs: definition.delayMs,
+    };
+  });
+
   return {
     status: "idle",
-    from: start.id,
-    to: start.next,
-    progress: 0,
     elapsedMs: 0,
     routes: { ...level.initialRoutes },
+    signals,
   };
 }
 
@@ -143,17 +178,18 @@ export function toggleJunction(
   };
 }
 
-export function advanceRun(
+function moveSignal(
   level: LevelDefinition,
-  state: RunState,
+  signal: SignalState,
+  routes: Readonly<Record<string, 0 | 1>>,
   deltaMs: number,
-): RunState {
-  if (state.status !== "running" || deltaMs <= 0) return state;
+): SignalState {
+  if (signal.status !== "moving" || deltaMs <= 0) return signal;
 
-  let from = state.from;
-  let to = state.to;
-  let progress = state.progress;
-  let remainingSeconds = Math.min(deltaMs, 1_000) / 1_000;
+  let from = signal.from;
+  let to = signal.to;
+  let progress = signal.progress;
+  let remainingSeconds = deltaMs / 1_000;
   let transitions = 0;
 
   while (remainingSeconds > 0 && transitions < 24) {
@@ -173,19 +209,17 @@ export function advanceRun(
     from = toNode.id;
     transitions += 1;
 
-    if (toNode.kind === "goal" || toNode.kind === "hazard") {
-      return {
-        ...state,
-        status: toNode.kind === "goal" ? "won" : "lost",
-        from,
-        to: from,
-        progress: 1,
-        elapsedMs: state.elapsedMs + deltaMs,
-      };
+    if (toNode.kind === "hazard") {
+      return { ...signal, status: "failed", from, to: from, progress: 1 };
+    }
+
+    if (toNode.kind === "goal") {
+      const status: SignalStatus = toNode.accepts === signal.shape ? "arrived" : "failed";
+      return { ...signal, status, from, to: from, progress: 1 };
     }
 
     if (toNode.kind === "junction" && toNode.routes) {
-      to = toNode.routes[state.routes[toNode.id] ?? 0];
+      to = toNode.routes[routes[toNode.id] ?? 0];
     } else if (toNode.next) {
       to = toNode.next;
     } else {
@@ -193,11 +227,42 @@ export function advanceRun(
     }
   }
 
+  return { ...signal, from, to, progress };
+}
+
+export function advanceRun(
+  level: LevelDefinition,
+  state: RunState,
+  deltaMs: number,
+): RunState {
+  if (state.status !== "running" || deltaMs <= 0) return state;
+
+  const safeDelta = Math.min(deltaMs, 1_000);
+  const elapsedMs = state.elapsedMs + safeDelta;
+  const signals = state.signals.map((current) => {
+    if (current.status === "arrived" || current.status === "failed") return current;
+
+    const activeDelta =
+      current.status === "queued"
+        ? Math.max(0, elapsedMs - Math.max(state.elapsedMs, current.delayMs))
+        : safeDelta;
+
+    if (current.status === "queued" && elapsedMs < current.delayMs) return current;
+    const moving: SignalState =
+      current.status === "queued" ? { ...current, status: "moving" } : current;
+    return moveSignal(level, moving, state.routes, activeDelta);
+  });
+
+  const status: RunStatus = signals.some((signal) => signal.status === "failed")
+    ? "lost"
+    : signals.every((signal) => signal.status === "arrived")
+      ? "won"
+      : "running";
+
   return {
     ...state,
-    from,
-    to,
-    progress,
-    elapsedMs: state.elapsedMs + deltaMs,
+    status,
+    elapsedMs,
+    signals,
   };
 }

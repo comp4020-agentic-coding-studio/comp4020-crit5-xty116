@@ -41,6 +41,8 @@ behind. `spec/README.md` draws the line.
 - Keep game rules in a pure TypeScript model. Write the focused route test before implementation; the canvas and DOM only render model state.
 - Pointer, touch and keyboard players use the same junction buttons. Targets stay at least 44px, focus is visible, and route state is never conveyed by colour alone.
 - The five-line campaign must finish inside five minutes while increasing planning or timing pressure. Do not make the first line a disguised tutorial screen.
+- From line 2 onward, delayed signals with different shapes share junctions and matching terminals. Later lines must require at least one switch after traffic is already moving; never return to static preconfiguration puzzles.
+- Signal identity is communicated by geometry as well as colour. A mismatched terminal is a loss, and the same junction button remains the only player verb.
 - Run axe against the built page and enforce Lighthouse budgets for performance, accessibility, best practices, LCP, CLS and blocking time.
 - Canvas animation runs only while the signal is moving. Idle and terminal states render on demand so a static opening never spends the main thread on invisible work.
 - Lighthouse performance gates use the median of three desktop runs; never accept or reject a build from one volatile shared-runner sample.

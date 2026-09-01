@@ -333,6 +333,93 @@ h1 span:last-child {
   list-style: none;
 }
 
+.dispatch-queue {
+  position: absolute;
+  z-index: 5;
+  top: calc(var(--topbar) + 42px);
+  left: 34%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.dispatch-label {
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dispatch-strip {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 38px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dispatch-strip li {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--signal);
+  opacity: 0.42;
+}
+
+.dispatch-strip li + li::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  right: 32px;
+  width: 20px;
+  border-top: 1px dashed var(--muted);
+}
+
+.dispatch-strip li[data-shape="circle"] {
+  color: var(--success);
+}
+
+.dispatch-strip li[data-shape="diamond"] {
+  color: var(--ink);
+}
+
+.signal-token {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+}
+
+[data-shape="circle"] .signal-token {
+  border-radius: 50%;
+}
+
+[data-shape="diamond"] .signal-token {
+  transform: rotate(45deg);
+}
+
+.dispatch-strip li.is-moving {
+  opacity: 1;
+  box-shadow: inset 0 -3px 0 currentColor;
+}
+
+.dispatch-strip li.is-arrived {
+  opacity: 1;
+}
+
+.dispatch-strip li.is-arrived .signal-token {
+  background: currentColor;
+}
+
+.dispatch-strip li.is-failed {
+  color: var(--danger);
+  opacity: 1;
+}
+
 .line-progress li {
   width: 44px;
   height: 5px;
@@ -519,6 +606,27 @@ h1 span:last-child {
     bottom: 20px;
     left: 14px;
     width: calc(100% - 28px);
+  }
+
+  .dispatch-queue {
+    top: calc(var(--topbar) + 178px);
+    left: 16px;
+    gap: 12px;
+  }
+
+  .dispatch-strip {
+    gap: 15px;
+  }
+
+  .dispatch-strip li {
+    width: 28px;
+    height: 28px;
+  }
+
+  .dispatch-strip li + li::before {
+    top: 13px;
+    right: 28px;
+    width: 15px;
   }
 
   .line-progress li {

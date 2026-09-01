@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="TURNLINE is a compact live-routing game about switching a moving signal through five increasingly tangled rail networks."
+      content="TURNLINE is a live-routing game about sorting delayed geometric signals through five increasingly demanding rail networks."
     />
     <meta property="og:title" content="TURNLINE" />
     <meta
       property="og:description"
-      content="Keep the signal alive. Five lines, one live routing desk."
+      content="Sort the traffic live. Five lines, one routing desk, no pause."
     />
     <meta property="og:image" content="./card.png" />
     <meta name="theme-color" content="#0a0b0b" />
     <title>TURNLINE - live routing game</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=dispatch" />
   </head>
   <body>
     <header class="topbar">
@@ -48,8 +48,8 @@
           <dd id="line-readout">01 / 05</dd>
         </div>
         <div>
-          <dt>Signal</dt>
-          <dd id="time-readout">00.0</dd>
+          <dt>Traffic</dt>
+          <dd id="traffic-readout">00 / 01</dd>
         </div>
         <div>
           <dt>Faults</dt>
@@ -62,18 +62,22 @@
         <div class="junction-layer" id="junction-layer"></div>
       </section>
 
+      <div class="dispatch-queue">
+        <span class="dispatch-label">Dispatch</span>
+        <ol class="dispatch-strip" id="dispatch-strip" aria-label="Signal queue"></ol>
+      </div>
       <ol class="line-progress" id="line-progress" aria-label="Route progress"></ol>
 
       <p class="status-line" id="status-line">
         <span class="status-index">01</span>
-        <span id="status-copy">Signal held</span>
+        <span id="status-copy">Traffic held</span>
       </p>
 
       <section class="result-overlay" id="result-overlay" hidden aria-labelledby="result-title">
         <div class="result-copy">
           <p class="eyebrow" id="result-kicker">Line 01</p>
           <h2 id="result-title">MISROUTED</h2>
-          <p id="result-detail">The signal reached a dead line.</p>
+          <p id="result-detail">Traffic reached the wrong terminal.</p>
           <button class="result-action" id="result-action" type="button">
             <i data-lucide="rotate-ccw" aria-hidden="true"></i>
             <span>Run again</span>
