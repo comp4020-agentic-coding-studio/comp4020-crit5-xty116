@@ -6,8 +6,9 @@ The breakthrough was learning the difference between one mechanic and one
 decision. The first TURNLINE build had one input, but most lines only asked the
 player to set a switch once and wait. Keeping the same junction control while
 sending delayed square, circle, and diamond signals through shared tracks made
-the decision evolve over time. It added depth without adding a second system or
-needing tutorial text. Moving the route logic into a pure graph model let me
+the decision evolve over time. Extending that rule to eight lines let the final
+three build from four to six signals without adding a second system or tutorial
+text. Moving the route logic into a pure graph model let me
 test that signals launch on schedule, matching terminals win, mismatches lose,
 and the final two-junction relay is solvable. Browser playtesting then answered
 the separate question of whether those rules were visible. That is what exposed
