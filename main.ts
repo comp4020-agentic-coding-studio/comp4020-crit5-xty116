@@ -47,6 +47,7 @@ let run = createRun(level);
 let faults = 0;
 let lastFrame = performance.now();
 let transitionTimer = 0;
+let activeFrame = 0;
 let muted = false;
 let audioContext: AudioContext | null = null;
 
@@ -102,6 +103,7 @@ function resizeCanvas(): void {
   canvas.height = Math.round(height * ratio);
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
   placeJunctions();
+  draw();
 }
 
 function tone(frequency: number, duration: number, volume = 0.045, delay = 0): void {
@@ -338,6 +340,7 @@ function switchRoute(id: string): void {
   statusCopy.textContent = "Signal live";
   liveStatus.textContent = wasIdle ? "Signal moving" : "Junction switched";
   updateJunctionButtons();
+  animateRun();
 }
 
 function buildProgress(): void {
@@ -374,6 +377,7 @@ function loadLevel(nextIndex: number): void {
   renderJunctionButtons();
   buildProgress();
   updateReadouts();
+  draw();
   requestAnimationFrame(() => {
     junctionLayer.querySelector<HTMLButtonElement>(".junction")?.focus({ preventScroll: true });
   });
@@ -430,7 +434,14 @@ function handleResultAction(): void {
   resetCurrentLine();
 }
 
+function animateRun(): void {
+  if (activeFrame !== 0 || run.status !== "running") return;
+  lastFrame = performance.now();
+  activeFrame = requestAnimationFrame(frame);
+}
+
 function frame(now: number): void {
+  activeFrame = 0;
   const delta = Math.min(50, now - lastFrame);
   lastFrame = now;
   const previousStatus = run.status;
@@ -443,7 +454,7 @@ function frame(now: number): void {
 
   updateReadouts();
   draw();
-  requestAnimationFrame(frame);
+  animateRun();
 }
 
 restartButton.addEventListener("click", resetCurrentLine);
@@ -468,4 +479,3 @@ new ResizeObserver(resizeCanvas).observe(canvas);
 
 resizeCanvas();
 loadLevel(0);
-requestAnimationFrame(frame);
