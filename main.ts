@@ -48,6 +48,7 @@ let faults = 0;
 let lastFrame = performance.now();
 let transitionTimer = 0;
 let activeFrame = 0;
+let canvasReady = false;
 let muted = false;
 let audioContext: AudioContext | null = null;
 
@@ -99,11 +100,16 @@ function resizeCanvas(): void {
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   const width = Math.max(1, canvas.clientWidth);
   const height = Math.max(1, canvas.clientHeight);
-  canvas.width = Math.round(width * ratio);
-  canvas.height = Math.round(height * ratio);
-  context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  const pixelWidth = Math.round(width * ratio);
+  const pixelHeight = Math.round(height * ratio);
+  const sizeChanged = canvas.width !== pixelWidth || canvas.height !== pixelHeight;
+  if (sizeChanged) {
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
   placeJunctions();
-  draw();
+  if (canvasReady && sizeChanged) draw();
 }
 
 function tone(frequency: number, duration: number, volume = 0.045, delay = 0): void {
@@ -140,18 +146,16 @@ function drawGrid(width: number, height: number): void {
   context.save();
   context.strokeStyle = "#1b1f1d";
   context.lineWidth = 1;
+  context.beginPath();
   for (let x = 0; x < width; x += 24) {
-    context.beginPath();
     context.moveTo(x + 0.5, 0);
     context.lineTo(x + 0.5, height);
-    context.stroke();
   }
   for (let y = 0; y < height; y += 24) {
-    context.beginPath();
     context.moveTo(0, y + 0.5);
     context.lineTo(width, y + 0.5);
-    context.stroke();
   }
+  context.stroke();
   context.restore();
 }
 
@@ -478,4 +482,5 @@ window.addEventListener("resize", resizeCanvas);
 new ResizeObserver(resizeCanvas).observe(canvas);
 
 resizeCanvas();
+canvasReady = true;
 loadLevel(0);
