@@ -43,5 +43,6 @@ behind. `spec/README.md` draws the line.
 - The five-line campaign must finish inside five minutes while increasing planning or timing pressure. Do not make the first line a disguised tutorial screen.
 - Run axe against the built page and enforce Lighthouse budgets for performance, accessibility, best practices, LCP, CLS and blocking time.
 - Canvas animation runs only while the signal is moving. Idle and terminal states render on demand so a static opening never spends the main thread on invisible work.
+- Lighthouse performance gates use the median of three desktop runs; never accept or reject a build from one volatile shared-runner sample.
 - Verify the deployed game at exactly 1920x1080 and 390x844 with no document overflow, console errors or layout shifts.
 - A week-specific contract may be committed red once as a deliberate TDD baseline. The implementation commit immediately after it must return the full suite to green.

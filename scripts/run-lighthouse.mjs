@@ -18,14 +18,21 @@ const result = spawnSync(process.platform === "win32" ? "lhci.cmd" : "lhci", ["a
 const manifestPath = ".lighthouseci/manifest.json";
 if (existsSync(manifestPath)) {
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-  const entry = manifest.find((item) => item.isRepresentativeRun) ?? manifest[0];
-  if (entry?.jsonPath && existsSync(entry.jsonPath)) {
-    const report = JSON.parse(readFileSync(entry.jsonPath, "utf8"));
-    const score = (category) => Math.round((report.categories[category]?.score ?? 0) * 100);
-    const metric = (audit) => report.audits[audit]?.numericValue ?? 0;
+  const reports = manifest
+    .filter((entry) => entry?.jsonPath && existsSync(entry.jsonPath))
+    .map((entry) => JSON.parse(readFileSync(entry.jsonPath, "utf8")));
+  if (reports.length > 0) {
+    const median = (values) => {
+      const ordered = [...values].sort((left, right) => left - right);
+      return ordered[Math.floor(ordered.length / 2)];
+    };
+    const score = (category) =>
+      Math.round(median(reports.map((report) => report.categories[category]?.score ?? 0)) * 100);
+    const metric = (audit) =>
+      median(reports.map((report) => report.audits[audit]?.numericValue ?? 0));
     console.log(
       [
-        `Lighthouse findings: performance ${score("performance")}`,
+        `Lighthouse median (${reports.length} runs): performance ${score("performance")}`,
         `accessibility ${score("accessibility")}`,
         `best practices ${score("best-practices")}`,
         `LCP ${Math.round(metric("largest-contentful-paint"))}ms`,
