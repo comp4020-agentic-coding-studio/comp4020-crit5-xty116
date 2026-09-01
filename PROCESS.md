@@ -1,70 +1,17 @@
 # Process overview
 
-<!-- TEMPLATE: this file is a shape to fill in, not a form. Replace everything
-     in it with your own overview, and delete this comment — `pnpm
-     check:evidence` will remind you if it's still here. -->
-
-A reading-guide to how the work came together --- a map to your process, not an
-essay about it. Markers read this file and follow its citations; they don't
-trawl the repo for evidence you didn't point at, so if a moment mattered, cite
-it.
-
-This file is the shape; the course site's
-[assessment page](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#what-you-submit)
-is the requirement, and its
-[word counts](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/topics/assessment/#word-counts)
-cover every deliverable.
-
 ## What I built
 
-One paragraph: the thing, and the idea behind it.
+TURNLINE is a five-line browser game about changing live rail junctions before a moving signal reaches them. I chose one verb and made its consequences increasingly demanding: the opening junction pulses, its default rail visibly ends at a red break, and the first switch starts the run. There is no start screen or explanatory copy.
+
+![TURNLINE at the sharing-card viewport](public/card.png)
 
 ## The moments that mattered
 
-Three or four for an assignment; fewer is fine for a weekly prototype. Keep the
-list short so each moment has room to do all four jobs:
+1. **I made restraint enforceable before designing.** The harness limits the game to junction switching, bans tutorial language and second mechanics, requires terminal states, native controls, and both marking viewports. I also allowed exactly one deliberately red contract commit, with the next commit required to restore green. That turned “keep it small” into backpressure rather than taste ([`03c1a08`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/03c1a08)).
 
-1. **what happened** --- the problem, or the thing that went wrong
-2. **what you did instead of the obvious thing** --- the call you made, and why
-   it beat the obvious one
-3. **how you knew it was right** --- the check you ran, the viewport you looked
-   at, what you read before accepting the diff
-4. **the citation** --- a commit or commit range, a `CLAUDE.md` change, a check
-   that went from red to green, a prompt paired with the commit it produced
+2. **I separated rules from presentation.** Focused tests first described wrong routes, successful routes, live switching, and immutable endings. The pure graph model then made all six new rule tests pass before Canvas, audio, or animation existed. This let the visual implementation become expressive without hiding game-state bugs ([`03c1a08...fe5d9f7`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/compare/03c1a08...fe5d9f7)).
 
-Jobs 2 and 3 are the ones the repo can't tell a reader on its own, so they're
-where the marks are. The strongest moments are the ones where a correction
-landed in the **harness** --- the standards and checks your work has to satisfy
---- rather than in a retry: a rule added to `CLAUDE.md`, a check wired up, an
-attempt thrown away. Retrying until it passes is the routine case, and changing
-what the work runs against is the skilled one.
+3. **I verified the shipped experience in layers.** The completed routing desk was played at 1920×1080 and 390×844: no overflow, every switch remained at least 54px, a correct first route won, and a wrong second route produced `MISROUTED` ([`ee53217`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/ee53217)). Axe, interface-contract tests, and Lighthouse budgets were then wired into `pnpm check`; 27 automated tests pass ([`dc5a731`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/dc5a731)).
 
-Cite each moment as a link whose text is the commit hash or range and whose
-target is this repo's commit or compare URL, so a reader clicks straight to the
-evidence:
-
-- one commit: [`a1b2c3d`](https://github.com/YOUR-ORG/YOUR-REPO/commit/a1b2c3d)
-- a range:
-  [`a1b2c3d...e4f5a6b`](https://github.com/YOUR-ORG/YOUR-REPO/compare/a1b2c3d...e4f5a6b)
-
-To pair a prompt with the commit it produced, quote the prompt (curated, not a
-full transcript) next to the citation:
-
-> the prompt, verbatim
-
-Screenshots are welcome where one carries the verification better than a
-sentence does. Commit the file to this repo and link it with a **relative**
-path, which is what makes it render on GitHub: `![alt text](docs/before.png)`.
-Images don't count towards the word count and don't replace the citation.
-
-## Before you ship
-
-`pnpm check:evidence` verifies your citations resolve to real commits, that a
-reflection entry the marker reads is in `reflections/`, and that your
-`CLAUDE.md` is there --- before a marker ever opens the file. It checks that
-your map is traceable, not that it is good: the marker judges whether your
-small, deliberately chosen set of moments shows real judgement and reflection. A
-green check is not a substitute for that curation.
-
-Images aren't checked: unlike a citation whose SHA doesn't resolve, a broken
-image is visible the moment this file is rendered on GitHub.
+4. **Playing changed the timing.** The automatic hand-off after `CONNECTED` felt too abrupt even though the state machine was correct. I extended the result hold from 1.25s to 1.6s so the consequence reads before the next network appears ([`b2e1770`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/b2e1770)).
