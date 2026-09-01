@@ -2,16 +2,18 @@
 
 ## What I built
 
-TURNLINE is a five-line game about changing rail junctions before a moving signal reaches them. Its pulsing opening switch, bright destination, and red broken default route expose one verb without a start screen or explanatory copy.
+TURNLINE is a five-line live sorting game. The player changes junctions while three signal shapes move toward matching terminals. A pulsing first switch and broken default route expose the only verb without a tutorial.
 
 ![TURNLINE at the sharing-card viewport](public/card.png)
 
 ## The moments that mattered
 
-1. **I made restraint enforceable before designing.** The harness limits the game to junction switching, bans tutorial language and second mechanics, requires terminal states, native controls, and both marking viewports. I also allowed exactly one deliberately red contract commit, with the next commit required to restore green. That turned “keep it small” into backpressure rather than taste ([`03c1a08`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/03c1a08)).
+1. **I made restraint enforceable before designing.** The harness limits the game to junction switching, bans tutorial language and second mechanics, and requires terminal states and both marking viewports. One deliberately red contract commit had to be followed immediately by green ([`03c1a08`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/03c1a08)).
 
-2. **I separated rules from presentation.** Focused tests first described wrong routes, successful routes, live switching, and immutable endings. The pure graph model then made all six new rule tests pass before Canvas, audio, or animation existed. This let the visual implementation become expressive without hiding game-state bugs ([`03c1a08...fe5d9f7`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/compare/03c1a08...fe5d9f7)).
+2. **I separated rules from presentation.** Focused tests described wrong routes, live switching, and immutable endings before Canvas or audio existed. The pure graph model made those contracts pass before visual work began ([`03c1a08...fe5d9f7`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/compare/03c1a08...fe5d9f7)).
 
-3. **I verified in layers.** At 1920×1080 and 390×844 there was no overflow, switches stayed at least 54px, a correct route won, and a wrong route produced `MISROUTED` ([`ee53217`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/ee53217)). Axe and interface contracts brought the suite to 27 tests ([`dc5a731`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/dc5a731)). CI rejected continuous idle rendering at 0.86 performance and 544ms TBT, so I made drawing on-demand and batched the initial grid. A repeat exposed shared-runner variance, so the sensor now uses a three-run desktop median. Final CI: performance 100, accessibility 100, best practices 96, LCP 262ms, CLS 0, TBT 0 ([`ce4207e...424e82f`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/compare/ce4207e...424e82f)).
+3. **Feedback exposed shallow complexity.** In the first version every line carried one signal, so switches could often be configured before motion began. I kept the one-button mechanic but introduced delayed, differently shaped traffic sharing the same junctions. The final line now coordinates two switches over time, and tests prove that a wrong-shaped terminal loses ([`36e7788`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/36e7788)).
 
-4. **Playing changed the timing.** The automatic hand-off after `CONNECTED` felt too abrupt even though the state machine was correct. I extended the result hold from 1.25s to 1.6s so the consequence reads before the next network appears ([`b2e1770`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/commit/b2e1770)).
+4. **Playing changed the interface.** I completed all five lines at 1920x1080, then deliberately misrouted line two at 390x844. There was no overflow, switches remained 54px, and the loss named the mismatched shapes. The upcoming signal looked like stray decoration, so I grouped the tokens under a visible `DISPATCH` label. The suite now has 29 tests.
+
+5. **Performance evidence changed the implementation.** CI caught idle rendering at 0.86 performance and 544ms TBT. Canvas now draws on-demand, batches the grid, and uses a three-run CI median. The last public run scored performance 100, accessibility 100, and best practices 96 ([`ce4207e...6a23fbe`](https://github.com/comp4020-agentic-coding-studio/comp4020-crit5-xty116/compare/ce4207e...6a23fbe)).
